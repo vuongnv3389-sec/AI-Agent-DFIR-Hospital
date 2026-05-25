@@ -484,614 +484,102 @@ Yêu cầu:
 
 ---
 
-# PHẦN 5 — WORKFLOW ĐIỀU PHỐI QUA MARKDOWN
+# PHẦN 5. Demo end-to-end nâng cấp
 
-Tạo file:
+## 5.1 Prompt điều tra viên nhập cho Supervisor
+
+Trong Roo, chọn **DFIR Supervisor Mode** hoặc **Orchestrator Mode**.
+
+Nhập:
 
 ```text
-cases/CASE-001/workflow.md
-```
+Máy của nhân viên có dấu hiệu đăng nhập bất thường, nghi ngờ có PowerShell lạ, cần kiểm tra nhanh và báo cáo sơ bộ.
 
-Nội dung:
-
-```markdown
-# CASE-001 DFIR Workflow
-
-## Case Objective
-
-Investigate suspicious PowerShell execution and unusual login activity on HOST-001.
-
-## Global Rules
-
-- Evidence is immutable.
-- Each Agent writes only to its own private workspace.
-- Shared folder contains normalized outputs only.
-- Every task must update progress.md and status.json.
-- Every important action must be logged to audit/agent_activity.log.
-- Human approval required before external API calls or destructive commands.
-
-## Agents
-
-| Agent | Role |
-|---|---|
-| Supervisor Agent | Workflow orchestration |
-| Intake Agent | Initial case summary |
-| Triage Agent | Incident classification |
-| Log Analysis Agent | Windows/Sysmon log analysis |
-| Timeline Agent | Timeline reconstruction |
-| Report Agent | Preliminary report |
-
-## Workflow Steps
-
-### TASK-001 — Intake
-
-Agent: Intake Agent
-
-Input:
+Hãy tạo case mới CASE-001 và điều phối các mode chuyên trách.
+Dữ liệu đầu vào nằm trong:
 - cases/CASE-001/evidence/user_report.md
-
-Private Workspace:
-- cases/CASE-001/agents/intake_agent/
-
-Output:
-- cases/CASE-001/shared/case_summary.md
-
-Completion Criteria:
-- Case summary includes affected host, user, symptoms, initial questions.
-
-Next:
-- TASK-002
-
----
-
-### TASK-002 — Triage
-
-Agent: Triage Agent
-
-Input:
-- cases/CASE-001/shared/case_summary.md
-
-Private Workspace:
-- cases/CASE-001/agents/triage_agent/
-
-Output:
-- cases/CASE-001/shared/triage_result.json
-
-Completion Criteria:
-- Valid JSON.
-- Includes incident_type, severity, confidence, recommended_next_steps.
-
-Next:
-- TASK-003
-
----
-
-### TASK-003 — Log Analysis
-
-Agent: Log Analysis Agent
-
-Input:
 - cases/CASE-001/evidence/sample_windows_events.json
 - cases/CASE-001/evidence/sample_sysmon.log
 
-Private Workspace:
-- cases/CASE-001/agents/log_analysis_agent/
-
-Output:
-- cases/CASE-001/shared/log_findings.json
-
-Allowed Tools:
-- tools/parse_eventlog.py
-
-Completion Criteria:
-- Valid JSON.
-- Includes suspicious events, IOCs, MITRE mapping if possible.
-
-Next:
-- TASK-004
-
----
-
-### TASK-004 — Timeline
-
-Agent: Timeline Agent
-
-Input:
-- cases/CASE-001/shared/log_findings.json
-
-Private Workspace:
-- cases/CASE-001/agents/timeline_agent/
-
-Output:
-- cases/CASE-001/shared/timeline.md
-
-Completion Criteria:
-- Timeline sorted by timestamp.
-- Each event references source evidence.
-
-Next:
-- TASK-005
-
----
-
-### TASK-005 — Report
-
-Agent: Report Agent
-
-Input:
-- cases/CASE-001/shared/case_summary.md
-- cases/CASE-001/shared/triage_result.json
-- cases/CASE-001/shared/log_findings.json
-- cases/CASE-001/shared/timeline.md
-
-Private Workspace:
-- cases/CASE-001/agents/report_agent/
-
-Output:
-- cases/CASE-001/reports/preliminary_report.md
-
-Completion Criteria:
-- Report includes summary, scope, findings, timeline, recommendation.
-```
-
-Cách Roo dùng workflow:
-
-1. Bạn mở Roo ở **Orchestrator Mode**.
-2. Prompt Supervisor đọc `workflow.md`.
-3. Supervisor tạo task tracking.
-4. Bạn chuyển sang custom mode tương ứng hoặc yêu cầu Roo dùng `switch_mode` khi cần. Roo có tool `switch_mode` để đổi mode theo chuyên môn. ([Roo Code Docs][3])
-
----
-
-# PHẦN 6 — TASK TRACKING & PROGRESS TRACKING
-
-## 6.1 Tạo `todo.md`
-
-```markdown
-# CASE-001 Todo
-
-| Task ID | Agent | Status | Input | Output | Next | Notes |
-|---|---|---|---|---|---|---|
-| TASK-001 | Intake Agent | pending | evidence/user_report.md | shared/case_summary.md | TASK-002 | |
-| TASK-002 | Triage Agent | pending | shared/case_summary.md | shared/triage_result.json | TASK-003 | |
-| TASK-003 | Log Analysis Agent | pending | evidence/sample_windows_events.json, evidence/sample_sysmon.log | shared/log_findings.json | TASK-004 | |
-| TASK-004 | Timeline Agent | pending | shared/log_findings.json | shared/timeline.md | TASK-005 | |
-| TASK-005 | Report Agent | pending | shared/*.md/json | reports/preliminary_report.md | done | |
-```
-
-## 6.2 Tạo `progress.md`
-
-```markdown
-# CASE-001 Progress Log
-
-## Status Legend
-
-- pending
-- running
-- blocked
-- completed
-- failed
-
----
-
-## TASK-001 — Intake
-
-Status: pending  
-Agent: Intake Agent  
-Started:  
-Completed:  
-Input: evidence/user_report.md  
-Output: shared/case_summary.md  
-Summary:  
-Issues:  
-Next: TASK-002
-```
-
-## 6.3 Tạo `status.json`
-
-```json
-{
-  "case_id": "CASE-001",
-  "overall_status": "initialized",
-  "current_task": null,
-  "active_agent": null,
-  "tasks": {
-    "TASK-001": {
-      "agent": "intake_agent",
-      "status": "pending",
-      "input": ["cases/CASE-001/evidence/user_report.md"],
-      "output": ["cases/CASE-001/shared/case_summary.md"]
-    },
-    "TASK-002": {
-      "agent": "triage_agent",
-      "status": "pending",
-      "input": ["cases/CASE-001/shared/case_summary.md"],
-      "output": ["cases/CASE-001/shared/triage_result.json"]
-    }
-  }
-}
-```
-
-`progress.md` dễ đọc cho con người. `status.json` dễ parse cho Agent, script hoặc orchestration layer.
-
----
-
-# PHẦN 7 — SHARED VS PRIVATE WORKSPACE
-
-## 7.1 Quy tắc bắt buộc
-
-| Khu vực           | Ai được ghi                | Mục đích                   |
-| ----------------- | -------------------------- | -------------------------- |
-| `evidence/`       | Không Agent nào tự sửa     | Evidence gốc               |
-| `agents/<agent>/` | Agent tương ứng            | Nháp, phân tích trung gian |
-| `shared/`         | Agent được giao task       | Output chuẩn hóa           |
-| `reports/`        | Report Agent               | Báo cáo                    |
-| `audit/`          | Supervisor hoặc audit tool | Log hoạt động              |
-
-## 7.2 Versioning output
-
-Không ghi đè file quan trọng. Dùng version:
-
-```text
-shared/log_findings_v001.json
-shared/log_findings_v002.json
-shared/timeline_v001.md
-reports/preliminary_report_v001.md
-```
-
-Có thể tạo symlink hoặc file pointer:
-
-```text
-shared/log_findings_latest.json
-```
-
-Nhưng MVP nên dùng version rõ ràng.
-
-## 7.3 Audit activity
-
-Mỗi Agent ghi:
-
-```text
-timestamp | agent | action | input | output | tool | status
-```
-
-Ví dụ:
-
-```text
-2026-05-21T10:15:00+07:00 | log_analysis_agent | created finding | evidence/sample_windows_events.json | shared/log_findings.json | parse_eventlog.py | completed
-```
-
----
-
-# PHẦN 8 — TOOL CALLING TRONG ROO
-
-Roo có nhóm tool `command` để chạy terminal command, nên có thể gọi Python/PowerShell/Bash nếu bạn cấp quyền. ([Roocode Inc.][2])
-
-## 8.1 Tạo `parse_eventlog.py`
-
-File:
-
-```text
-tools/parse_eventlog.py
-```
-
-Nội dung:
-
-```python
-import json
-import sys
-from datetime import datetime, timezone
-
-input_path = sys.argv[1]
-output_path = sys.argv[2]
-
-with open(input_path, "r", encoding="utf-8") as f:
-    event = json.load(f)
-
-findings = {
-    "finding_id": "FND-LOG-001",
-    "created_at": datetime.now(timezone.utc).isoformat(),
-    "source_file": input_path,
-    "severity": "high" if "powershell" in event.get("process", "").lower() else "low",
-    "title": "Suspicious PowerShell execution",
-    "description": "PowerShell process execution observed.",
-    "observables": {
-        "process": event.get("process"),
-        "command_line": event.get("command_line"),
-        "user": event.get("user")
-    },
-    "mitre": [
-        {
-            "tactic": "Execution",
-            "technique": "T1059.001",
-            "name": "PowerShell"
-        }
-    ]
-}
-
-with open(output_path, "w", encoding="utf-8") as f:
-    json.dump(findings, f, indent=2)
-
-print(f"Wrote findings to {output_path}")
-```
-
-## 8.2 Tạo `generate_timeline.py`
-
-```python
-import json
-import sys
-from datetime import datetime, timezone
-
-input_path = sys.argv[1]
-output_path = sys.argv[2]
-
-with open(input_path, "r", encoding="utf-8") as f:
-    finding = json.load(f)
-
-timeline = f"""# Timeline
-
-| Time | Event | Source | Severity |
-|---|---|---|---|
-| {datetime.now(timezone.utc).isoformat()} | {finding.get("title")} | {finding.get("source_file")} | {finding.get("severity")} |
-
-## Notes
-
-{finding.get("description")}
-"""
-
-with open(output_path, "w", encoding="utf-8") as f:
-    f.write(timeline)
-
-print(f"Wrote timeline to {output_path}")
-```
-
-## 8.3 Tạo `write_audit_log.py`
-
-```python
-import sys
-from datetime import datetime, timezone
-
-log_path, agent, action, status = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-
-line = f"{datetime.now(timezone.utc).isoformat()} | {agent} | {action} | {status}\n"
-
-with open(log_path, "a", encoding="utf-8") as f:
-    f.write(line)
-
-print(line)
-```
-
-## 8.4 Prompt Roo gọi tool
-
-Trong Roo Log Analysis mode:
-
-```text
-Bạn là Log Analysis Agent.
-
-Task:
-- Đọc cases/CASE-001/evidence/sample_windows_events.json
-- Chạy tool:
-  python tools/parse_eventlog.py cases/CASE-001/evidence/sample_windows_events.json cases/CASE-001/shared/log_findings.json
-
 Yêu cầu:
+- Tôi chỉ làm việc với DFIR Supervisor.
+- Supervisor phải tạo workflow, task, progress, status.
+- Supervisor không tự phân tích log chi tiết.
+- Supervisor phải gọi mode phù hợp.
 - Không sửa evidence gốc.
-- Ghi phân tích trung gian vào cases/CASE-001/agents/log_analysis_agent/notes.md.
-- Cập nhật cases/CASE-001/progress.md.
-- Cập nhật cases/CASE-001/status.json.
-- Ghi audit vào cases/CASE-001/audit/agent_activity.log bằng tools/write_audit_log.py.
 ```
 
-Khi Roo đề xuất command, bạn review rồi approve.
+## 5.2 Bước 1 — Supervisor tạo case control files
 
----
-
-# PHẦN 9 — AGENT HANDOFF
-
-## 9.1 Flow chuẩn
-
-```mermaid
-flowchart TD
-    A[Log Analysis Agent] --> B[Create shared/log_findings.json]
-    B --> C[Update progress.md]
-    C --> D[Update status.json]
-    D --> E[Supervisor validates output]
-    E --> F[Supervisor assigns Timeline Agent]
-    F --> G[Timeline Agent reads log_findings.json]
-    G --> H[Timeline Agent creates shared/timeline.md]
-```
-
-## 9.2 Handoff JSON
-
-Tạo file:
+Supervisor tạo:
 
 ```text
-cases/CASE-001/shared/handoff_LOG_TO_TIMELINE.json
-```
-
-```json
-{
-  "handoff_id": "HANDOFF-LOG-TIMELINE-001",
-  "from_agent": "log_analysis_agent",
-  "to_agent": "timeline_agent",
-  "status": "ready",
-  "input_for_next_agent": [
-    "cases/CASE-001/shared/log_findings.json"
-  ],
-  "required_output": [
-    "cases/CASE-001/shared/timeline.md"
-  ],
-  "validation": {
-    "schema_valid": true,
-    "reviewed_by": "supervisor_agent"
-  }
-}
-```
-
-## 9.3 Prompt Supervisor validate handoff
-
-```text
-Bạn là Supervisor Agent.
-
-Hãy kiểm tra:
-- cases/CASE-001/shared/log_findings.json
-- cases/CASE-001/shared/handoff_LOG_TO_TIMELINE.json
-
-Nếu output hợp lệ:
-- cập nhật TASK-003 = completed
-- cập nhật TASK-004 = running
-- giao task cho Timeline Agent
-
-Nếu output thiếu field:
-- đánh dấu TASK-003 = blocked
-- ghi lý do vào progress.md
-```
-
----
-
-# PHẦN 10 — DFIR MINI DEMO
-
-## 10.1 Tạo input mẫu
-
-File:
-
-```text
-cases/CASE-001/evidence/user_report.md
-```
-
-```markdown
-# User Report
-
-User user01 reported suspicious PowerShell popup on HOST-001.
-The SOC also observed unusual login activity around 09:15.
-```
-
-File:
-
-```text
-cases/CASE-001/evidence/sample_windows_events.json
-```
-
-```json
-{
-  "timestamp": "2026-05-21T09:17:00+07:00",
-  "event_id": 4688,
-  "host": "HOST-001",
-  "user": "user01",
-  "process": "powershell.exe",
-  "command_line": "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand SQBFAFgA"
-}
-```
-
-File:
-
-```text
-cases/CASE-001/evidence/sample_sysmon.log
-```
-
-```text
-2026-05-21T09:17:00+07:00 HOST-001 Sysmon EventID=1 ProcessCreate Image=powershell.exe CommandLine="-EncodedCommand SQBFAFgA" User=user01
-```
-
-## 10.2 Chạy bước 1 — Supervisor khởi tạo
-
-Trong Roo Orchestrator Mode, nhập:
-
-```text
-Bạn là DFIR Supervisor Agent.
-
-Hãy đọc:
 cases/CASE-001/workflow.md
-
-Sau đó:
-1. Tạo hoặc cập nhật cases/CASE-001/todo.md
-2. Tạo hoặc cập nhật cases/CASE-001/progress.md
-3. Tạo hoặc cập nhật cases/CASE-001/status.json
-4. Không sửa evidence gốc
-5. Không phân tích log trực tiếp
-6. Ghi audit vào cases/CASE-001/audit/agent_activity.log
-```
-
-Expected:
-
-```text
-todo.md updated
-progress.md initialized
-status.json initialized
-audit/agent_activity.log updated
-```
-
-## 10.3 Chạy bước 2 — Intake Agent
-
-Chuyển Roo sang custom mode **DFIR Intake** hoặc yêu cầu Roo switch mode.
-
-Prompt:
-
-```text
-Bạn là Intake Agent.
-
-Nhận TASK-001 từ cases/CASE-001/todo.md.
-
-Đọc:
-cases/CASE-001/evidence/user_report.md
-
-Ghi nháp vào:
-cases/CASE-001/agents/intake_agent/intake_notes.md
-
-Xuất kết quả chuẩn hóa:
-cases/CASE-001/shared/case_summary.md
-
-Cập nhật:
+cases/CASE-001/todo.md
 cases/CASE-001/progress.md
 cases/CASE-001/status.json
-
-Không sửa evidence gốc.
+cases/CASE-001/tasks/TASK-001-intake.md
+cases/CASE-001/tasks/TASK-002-triage.md
+cases/CASE-001/tasks/TASK-003-log-analysis.md
+cases/CASE-001/tasks/TASK-004-timeline.md
+cases/CASE-001/tasks/TASK-005-report.md
 ```
 
-Expected `shared/case_summary.md`:
+Expected `shared/supervisor_decision.md`:
 
 ```markdown
-# Case Summary
+# Supervisor Decision
 
-Case: CASE-001  
-Affected Host: HOST-001  
-Affected User: user01  
-Symptoms:
-- Suspicious PowerShell popup
-- Unusual login activity
-
-Initial Hypothesis:
-- Possible suspicious script execution
-- Possible compromised user account
+Decision: Start intake and triage workflow.  
+Reason: User reported suspicious login and PowerShell behavior.  
+Next: Assign TASK-001 to Intake Mode.
 ```
 
-## 10.4 Chạy bước 3 — Triage Agent
+## 5.3 Bước 2 — Supervisor gọi Intake Mode
 
-Prompt:
+Nếu dùng Boomerang/new_task, Supervisor giao subtask sang Intake Mode.
+
+Prompt giao task mẫu:
 
 ```text
-Bạn là Triage Agent.
+Switch to Intake Mode and execute:
+cases/CASE-001/tasks/TASK-001-intake.md
 
-Nhận TASK-002.
-
-Đọc:
-cases/CASE-001/shared/case_summary.md
-
-Xuất:
-cases/CASE-001/shared/triage_result.json
-
-Schema bắt buộc:
-{
-  "case_id": "...",
-  "incident_type": "...",
-  "severity": "...",
-  "confidence": 0.0,
-  "recommended_next_steps": []
-}
-
-Cập nhật progress.md và status.json.
+Return:
+- status
+- output files
+- summary
+- issues
 ```
 
-Expected:
+Output kỳ vọng:
+
+```text
+shared/case_summary.md
+agents/intake/intake_notes.md
+```
+
+## 5.4 Bước 3 — Supervisor đọc Intake output và gọi Triage
+
+Supervisor kiểm tra:
+
+```text
+shared/case_summary.md exists
+progress.md TASK-001 completed
+status.json TASK-001 completed
+```
+
+Sau đó gọi Triage:
+
+```text
+Switch to Triage Mode and execute:
+cases/CASE-001/tasks/TASK-002-triage.md
+
+Use only the files listed in the task.
+Write output to shared/triage_result.json.
+```
+
+Output kỳ vọng:
 
 ```json
 {
@@ -1099,234 +587,197 @@ Expected:
   "incident_type": "suspicious_powershell_execution",
   "severity": "high",
   "confidence": 0.8,
-  "recommended_next_steps": [
-    "analyze_windows_event_log",
-    "analyze_sysmon_log",
-    "build_timeline"
-  ]
+  "recommended_modes": ["log_analysis", "timeline", "report"],
+  "required_evidence": [
+    "sample_windows_events.json",
+    "sample_sysmon.log"
+  ],
+  "rationale": "User report and symptoms indicate suspicious PowerShell execution and unusual login activity."
 }
 ```
 
-## 10.5 Chạy bước 4 — Log Analysis Agent
+## 5.5 Bước 4 — Supervisor gọi Log Analysis
 
 Prompt:
 
 ```text
-Bạn là Log Analysis Agent.
+Switch to Log Analysis Mode and execute:
+cases/CASE-001/tasks/TASK-003-log-analysis.md
 
-Nhận TASK-003.
-
-Đọc:
-cases/CASE-001/evidence/sample_windows_events.json
-cases/CASE-001/evidence/sample_sysmon.log
-
-Chạy tool nếu cần:
-python tools/parse_eventlog.py cases/CASE-001/evidence/sample_windows_events.json cases/CASE-001/shared/log_findings.json
-
-Ghi nháp:
-cases/CASE-001/agents/log_analysis_agent/analysis_notes.md
-
-Output chuẩn hóa:
-cases/CASE-001/shared/log_findings.json
-
-Không sửa evidence gốc.
-Không ghi vào workspace Agent khác.
-Cập nhật progress.md, status.json và audit log.
+Constraints:
+- Do not modify evidence.
+- Work only in agents/log_analysis/.
+- Output normalized findings to shared/log_findings.json.
+- Update progress/status if allowed.
 ```
 
-## 10.6 Chạy bước 5 — Timeline Agent
-
-Prompt:
-
-```text
-Bạn là Timeline Agent.
-
-Nhận TASK-004.
-
-Đọc:
-cases/CASE-001/shared/log_findings.json
-
-Tạo:
-cases/CASE-001/shared/timeline.md
-
-Có thể chạy:
-python tools/generate_timeline.py cases/CASE-001/shared/log_findings.json cases/CASE-001/shared/timeline.md
-
-Cập nhật progress.md, status.json và audit log.
-```
-
-## 10.7 Chạy bước 6 — Report Agent
-
-Prompt:
-
-```text
-Bạn là Report Agent.
-
-Nhận TASK-005.
-
-Đọc:
-cases/CASE-001/shared/case_summary.md
-cases/CASE-001/shared/triage_result.json
-cases/CASE-001/shared/log_findings.json
-cases/CASE-001/shared/timeline.md
-
-Tạo:
-cases/CASE-001/reports/preliminary_report.md
-
-Báo cáo phải gồm:
-- Executive summary
-- Scope
-- Evidence reviewed
-- Findings
-- Timeline
-- Initial assessment
-- Recommended next steps
-
-Không sửa evidence gốc.
-Không sửa output Agent khác.
-```
-
----
-
-# PHẦN 11 — BEST PRACTICES
-
-## 11.1 Workflow Markdown convention
-
-Mỗi task nên có đủ:
-
-```text
-Task ID
-Agent
-Input
-Private Workspace
-Output
-Allowed Tools
-Completion Criteria
-Next Task
-Human Approval
-```
-
-## 11.2 File naming convention
-
-```text
-<artifact_type>_<agent>_v001.<ext>
-```
-
-Ví dụ:
-
-```text
-log_findings_log_analysis_agent_v001.json
-timeline_timeline_agent_v001.md
-preliminary_report_report_agent_v001.md
-```
-
-## 11.3 Output schema convention
-
-Mọi JSON output nên có:
+Output kỳ vọng:
 
 ```json
 {
   "case_id": "CASE-001",
-  "agent": "log_analysis_agent",
-  "created_at": "ISO-8601",
-  "input_files": [],
-  "output_type": "finding",
-  "confidence": 0.0,
-  "data": {}
+  "task_id": "TASK-003",
+  "agent": "log_analysis",
+  "status": "completed",
+  "confidence": 0.86,
+  "findings": [
+    {
+      "title": "Suspicious PowerShell EncodedCommand",
+      "severity": "high",
+      "source": "sample_windows_events.json",
+      "mitre": ["T1059.001"],
+      "evidence": "powershell.exe -EncodedCommand"
+    }
+  ],
+  "next_recommended_action": "timeline"
 }
 ```
 
-## 11.4 Evidence immutable
+## 5.6 Bước 5 — Supervisor gọi Timeline
 
-Không Agent nào được:
+Prompt:
 
-* sửa file trong `evidence/`;
-* xóa evidence;
-* đổi tên evidence;
-* upload evidence ra ngoài;
-* ghi output phân tích vào folder evidence.
+```text
+Switch to Timeline Mode and execute:
+cases/CASE-001/tasks/TASK-004-timeline.md
 
-## 11.5 Human approval
+Read:
+- shared/log_findings.json
 
-Bắt buộc approval trước khi:
+Create:
+- shared/timeline.md
+```
 
-* chạy tool destructive;
-* gọi API bên ngoài;
-* upload hash/file;
-* xóa file;
-* nén hoặc di chuyển evidence;
-* chạy script chưa được review.
+Output kỳ vọng:
 
-## 11.6 Context size management
+```markdown
+# CASE-001 Timeline
 
-Không nạp toàn bộ evidence lớn vào Roo. Dùng:
+| Time | Event | Source | Confidence |
+|---|---|---|---|
+| Unknown / from log | Suspicious PowerShell EncodedCommand observed | sample_windows_events.json | 0.86 |
+```
 
-* summary file;
-* extracted findings;
-* JSON normalized output;
-* chunking;
-* tool parser;
-* timeline intermediate file.
+## 5.7 Bước 6 — Supervisor quyết định có cần phân tích thêm không
+
+Supervisor ghi `shared/supervisor_decision.md`:
+
+```markdown
+# Supervisor Decision
+
+Decision: Proceed to preliminary report.  
+Reason:
+- Intake completed.
+- Triage indicates suspicious PowerShell execution.
+- Log Analysis found EncodedCommand behavior.
+- Timeline is sufficient for preliminary report.
+Limitation:
+- Endpoint artefacts and memory were not analyzed.
+Next:
+- Assign Report Writing Mode.
+```
+
+## 5.8 Bước 7 — Supervisor gọi Report Writing Mode
+
+Prompt:
+
+```text
+Switch to Report Writing Mode and execute:
+cases/CASE-001/tasks/TASK-005-report.md
+
+Use:
+- shared/case_summary.md
+- shared/triage_result.json
+- shared/log_findings.json
+- shared/timeline.md
+- shared/supervisor_decision.md
+
+Create:
+- reports/preliminary_report.md
+```
+
+## 5.9 Bước 8 — Supervisor trả kết quả cho điều tra viên
+
+Câu trả lời cuối của Supervisor:
+
+```text
+Đã hoàn thành kiểm tra sơ bộ CASE-001.
+
+Kết luận sơ bộ:
+- Có dấu hiệu PowerShell bất thường dạng EncodedCommand.
+- Mức độ: high.
+- Confidence: khoảng 0.8–0.86.
+- Chưa đủ dữ liệu để kết luận root cause.
+
+Đã tạo:
+- shared/case_summary.md
+- shared/triage_result.json
+- shared/log_findings.json
+- shared/timeline.md
+- reports/preliminary_report.md
+
+Khuyến nghị:
+- Thu thêm endpoint artefact.
+- Kiểm tra process tree/EDR telemetry.
+- Kiểm tra đăng nhập bất thường theo user01.
+```
 
 ---
 
-# PHẦN 12 — KẾT LUẬN
+# 6. Quy tắc điều phối cho Supervisor
 
-## Stack Roo MVP
+| Điều kiện                  | Supervisor gọi                      |
+| -------------------------- | ----------------------------------- |
+| Case mới, mô tả thô        | Intake                              |
+| Đã có case summary         | Triage                              |
+| Thiếu evidence             | Evidence Collection                 |
+| Có Windows/Sysmon/SIEM log | Log Analysis                        |
+| Có endpoint artefact       | Endpoint Analysis                   |
+| Có file nghi vấn/hash      | Malware Analysis                    |
+| Có PCAP/Zeek/Suricata      | Network Analysis                    |
+| Có IOC                     | Threat Intelligence                 |
+| Có nhiều findings          | Timeline                            |
+| Đủ dữ liệu sơ bộ           | Report Writing                      |
+| Báo cáo gần hoàn tất       | Quality Review                      |
+| Output thiếu schema        | trả lại mode tạo output             |
+| Confidence thấp            | yêu cầu phân tích sâu/thêm evidence |
+| Có hành động nhạy cảm      | xin human approval                  |
+| Có rủi ro pháp lý/cao      | escalate human expert               |
+
+---
+
+# 7. Test plan kiểm chứng gọi mode
+
+| Test    | Mục tiêu                          | Pass criteria                                 |
+| ------- | --------------------------------- | --------------------------------------------- |
+| TEST-01 | Supervisor tạo workflow/task      | Có workflow.md và tasks/*.md                  |
+| TEST-02 | Supervisor gọi Intake đúng        | Intake chỉ đọc user_report, tạo case_summary  |
+| TEST-03 | Supervisor gọi Triage đúng        | triage_result.json hợp lệ                     |
+| TEST-04 | Supervisor không tự phân tích log | Log findings chỉ do Log Analysis tạo          |
+| TEST-05 | Log Analysis ghi đúng workspace   | Có agents/log_analysis và shared/log_findings |
+| TEST-06 | Handoff hoạt động                 | Timeline đọc log_findings                     |
+| TEST-07 | status/progress cập nhật          | JSON hợp lệ, task status đúng                 |
+| TEST-08 | Shared/private isolation          | Không có Agent ghi vào folder Agent khác      |
+| TEST-09 | Evidence immutable                | evidence không đổi hash                       |
+| TEST-10 | Report được tạo                   | reports/preliminary_report.md tồn tại         |
+
+---
+
+# 8. Kết luận triển khai
+
+## MVP phù hợp
 
 ```text
 VS Code
 + Roo Code
-+ Custom Modes
-+ Markdown workflow
-+ File-based task tracking
-+ Python tool wrappers
-+ Shared/private workspace
++ DFIR Supervisor Mode
++ Specialist Custom Modes
++ workflow.md
++ tasks/*.md
++ todo.md / progress.md / status.json
++ shared/private workspace
 ```
 
-## Stack production workstation
-
-```text
-VS Code
-+ Roo Code
-+ Custom Modes
-+ strict permissions
-+ signed audit log
-+ tool wrapper layer
-+ schema validator
-+ report generator
-+ optional MCP/tool server
-```
-
-## Limitation của Roo
-
-* Không phải SOAR chuyên dụng.
-* Folder permission chủ yếu dựa vào prompt/config, chưa thay thế OS-level ACL.
-* Multi-agent cần discipline trong workflow và handoff.
-* Với case lớn, cần chunking và tool parser.
-* Cần review command trước khi chạy.
-
-## Workaround
-
-* Dùng `permissions.yaml`.
-* Dùng workspace riêng cho từng Agent.
-* Dùng script validate schema.
-* Dùng Git để audit thay đổi file.
-* Dùng OS permission/read-only cho `evidence/`.
-* Dùng human approval cho command/API.
-
-## Khi nào cần custom orchestration layer
-
-Cần nâng cấp ngoài Roo nếu:
-
-* muốn chạy nhiều Agent song song thật;
-* cần queue/retry tự động;
-* cần RBAC nghiêm ngặt;
-* cần tích hợp SIEM/EDR/SOAR production;
-* cần signed chain of custody;
-* cần workflow engine như Temporal, LangGraph hoặc Airflow.
-
-Kết luận: với MVP và pilot, **VS Code + Roo Code + file-based orchestration** là đủ để dựng “DFIR Hospital Workstation” thực chiến. Khi quy mô tăng, Roo nên đóng vai trò IDE/agent interface, còn orchestration lõi nên chuyển dần sang workflow engine chuyên dụng.
 
 [1]: https://marketplace.visualstudio.com/items?itemName=RooVeterinaryInc.roo-cline&utm_source=chatgpt.com "Roo Code - Visual Studio Marketplace"
 [2]: https://roocodeinc.github.io/Roo-Code/basic-usage/using-modes/?utm_source=chatgpt.com "Using Modes | Roo Code Documentation"
