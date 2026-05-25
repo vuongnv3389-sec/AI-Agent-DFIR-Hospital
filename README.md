@@ -484,7 +484,7 @@ Yêu cầu:
 
 ---
 
-# PHẦN 5. Demo end-to-end nâng cấp
+# PHẦN 5. DFIR MINI DEMO
 
 ## 5.1 Prompt điều tra viên nhập cho Supervisor
 
@@ -724,7 +724,7 @@ Khuyến nghị:
 
 ---
 
-# 6. Quy tắc điều phối cho Supervisor
+# PHẦN 6 - Quy tắc điều phối cho Supervisor
 
 | Điều kiện                  | Supervisor gọi                      |
 | -------------------------- | ----------------------------------- |
@@ -746,7 +746,7 @@ Khuyến nghị:
 
 ---
 
-# 7. Test plan kiểm chứng gọi mode
+# PHẦN 7 - Test plan kiểm chứng gọi mode
 
 | Test    | Mục tiêu                          | Pass criteria                                 |
 | ------- | --------------------------------- | --------------------------------------------- |
@@ -763,7 +763,7 @@ Khuyến nghị:
 
 ---
 
-# 8. Kết luận triển khai
+# PHẦN 8 - Kết luận triển khai
 
 ## MVP phù hợp
 
