@@ -188,9 +188,7 @@ mkdir cases\CASE-001\agents\log_analysis_agent
 mkdir cases\CASE-001\agents\timeline_agent
 mkdir cases\CASE-001\agents\report_agent
 
-mkdir agents
 mkdir tools
-mkdir configs
 ```
 
 ## 3.3 Cấu trúc chuẩn
@@ -215,21 +213,10 @@ dfir-agent-workstation/
 │           ├── log_analysis_agent/
 │           ├── timeline_agent/
 │           └── report_agent/
-├── agents/
-│   ├── supervisor_agent.md
-│   ├── intake_agent.md
-│   ├── triage_agent.md
-│   ├── log_analysis_agent.md
-│   ├── timeline_agent.md
-│   └── report_agent.md
 ├── tools/
 │   ├── parse_eventlog.py
 │   ├── generate_timeline.py
 │   └── write_audit_log.py
-└── configs/
-    ├── models.yaml
-    ├── tools.yaml
-    └── permissions.yaml
 ```
 
 ---
