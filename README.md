@@ -327,7 +327,7 @@ Nguyên tắc điều phối:
 - Quality Review nên chạy trước khi trả báo cáo cuối cùng.
 ```
 
-# 6. Specialist Mode prompt template
+## 4.3. Specialist Mode prompt template
 
 ```text
 Bạn là <SPECIALIST_MODE> trong hệ thống AI Agent DFIR Hospital.
@@ -359,7 +359,7 @@ Kết quả trả về cho Supervisor phải gồm:
 - Recommended next consumer
 ```
 
-## Prompt riêng cho Intake Mode
+### Prompt riêng cho Intake Mode
 
 ```text
 Bạn là Intake Mode.
@@ -384,7 +384,7 @@ Không được:
 - Không kết luận root cause.
 ```
 
-## Prompt riêng cho Triage Mode
+### Prompt riêng cho Triage Mode
 
 ```text
 Bạn là Triage Mode.
@@ -410,7 +410,7 @@ Schema tối thiểu:
 }
 ```
 
-## Prompt riêng cho Log Analysis Mode
+### Prompt riêng cho Log Analysis Mode
 
 ```text
 Bạn là Log Analysis Mode.
@@ -436,7 +436,7 @@ Không được:
 - Không gọi threat intel API nếu chưa được Supervisor chỉ định.
 ```
 
-## Prompt riêng cho Timeline Mode
+### Prompt riêng cho Timeline Mode
 
 ```text
 Bạn là Timeline Mode.
@@ -460,7 +460,7 @@ Yêu cầu:
 - Đánh dấu confidence.
 ```
 
-## Prompt riêng cho Report Writing Mode
+### Prompt riêng cho Report Writing Mode
 
 ```text
 Bạn là Report Writing Mode.
