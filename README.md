@@ -164,9 +164,7 @@ mkdir -p cases/CASE-001/agents/log_analysis_agent
 mkdir -p cases/CASE-001/agents/timeline_agent
 mkdir -p cases/CASE-001/agents/report_agent
 
-mkdir -p agents
 mkdir -p tools
-mkdir -p configs
 ```
 
 Windows PowerShell:
